@@ -15,7 +15,7 @@ afterAll(async () => {
   await app.close();
 });
 
-test('[RED] GET /salary/calculate/:id should calculate net salary for an employee in India', async () => {
+test('[GREEN] GET /salary/calculate/:id should calculate net salary for an employee in India', async () => {
   // 1. Create employee
   const payload = { fullName: 'Ravi Kumar', jobTitle: 'Developer', country: 'IN', salary: 100000 };
   const createResponse = await app.inject({ method: 'POST', url: '/employees', payload });
@@ -36,7 +36,7 @@ test('[RED] GET /salary/calculate/:id should calculate net salary for an employe
   expect(body.tds).toBe(10000);
 });
 
-test('[RED] GET /salary/calculate/:id should calculate net salary for an employee in the US', async () => {
+test('[GREEN] GET /salary/calculate/:id should calculate net salary for an employee in the US', async () => {
     // 1. Create employee
     const payload = { fullName: 'John Smith', jobTitle: 'Manager', country: 'US', salary: 120000 };
     const createResponse = await app.inject({ method: 'POST', url: '/employees', payload });
@@ -56,7 +56,7 @@ test('[RED] GET /salary/calculate/:id should calculate net salary for an employe
     expect(body.tds).toBe(18000);
 });
   
-test('[RED] GET /salary/calculate/:id should return 404 for non-existent employee', async () => {
+test('[GREEN] GET /salary/calculate/:id should return 404 for non-existent employee', async () => {
     const nonExistentId = randomUUID();
     const response = await app.inject({
         method: 'GET',
