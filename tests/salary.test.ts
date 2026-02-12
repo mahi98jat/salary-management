@@ -55,6 +55,46 @@ test('[GREEN] GET /salary/calculate/:id should calculate net salary for an emplo
     expect(body.netSalary).toBe(102000); // 15% TDS
     expect(body.tds).toBe(18000);
 });
+
+test('[GREEN] GET /salary/calculate/:id should use default TDS for an unlisted country (DE)', async () => {
+  // 1. Create employee from a country not in our explicit TDS list
+  const payload = { fullName: 'Hans Zimmer', jobTitle: 'Composer', country: 'DE', salary: 100000 };
+  const createResponse = await app.inject({ method: 'POST', url: '/employees', payload });
+  const employeeId = JSON.parse(createResponse.body).id;
+
+  // 2. Calculate salary
+  const response = await app.inject({
+    method: 'GET',
+    url: `/salary/calculate/${employeeId}`,
+  });
+
+  // 3. Assert
+  expect(response.statusCode).toBe(200);
+  const body = JSON.parse(response.body);
+  expect(body.grossSalary).toBe(100000);
+  expect(body.netSalary).toBe(95000); // 5% default TDS
+  expect(body.tds).toBe(5000);
+});
+
+test('[GREEN] GET /salary/calculate/:id should use default TDS for an unlisted country (FR)', async () => {
+  // 1. Create employee from another country not in our explicit TDS list
+  const payload = { fullName: 'Amélie Poulain', jobTitle: 'Waitress', country: 'FR', salary: 50000 };
+  const createResponse = await app.inject({ method: 'POST', url: '/employees', payload });
+  const employeeId = JSON.parse(createResponse.body).id;
+
+  // 2. Calculate salary
+  const response = await app.inject({
+    method: 'GET',
+    url: `/salary/calculate/${employeeId}`,
+  });
+
+  // 3. Assert
+  expect(response.statusCode).toBe(200);
+  const body = JSON.parse(response.body);
+  expect(body.grossSalary).toBe(50000);
+  expect(body.netSalary).toBe(47500); // 5% default TDS (2500)
+  expect(body.tds).toBe(2500);
+});
   
 test('[GREEN] GET /salary/calculate/:id should return 404 for non-existent employee', async () => {
     const nonExistentId = randomUUID();
