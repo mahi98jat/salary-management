@@ -1,0 +1,5 @@
+{
+  "name": "Incubyte TDD Salary Master",
+  "description": "An interactive TDD mentor for the Incubyte Salary Management Kata, featuring AI-guided steps for RED-GREEN-REFACTOR cycles, salary analytics, and automated code generation using Gemini.",
+  "requestFramePermissions": []
+}
