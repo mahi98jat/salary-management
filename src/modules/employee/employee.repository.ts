@@ -62,6 +62,32 @@ export class EmployeeRepository {
     // The `changes` property will be 1 if a row was deleted, 0 otherwise.
     return result.changes > 0;
   }
+
+  getMetricsByCountry() {
+    const stmt = db.prepare(`
+      SELECT 
+        country,
+        MIN(salary) as min, 
+        MAX(salary) as max, 
+        AVG(salary) as average 
+      FROM employees 
+      GROUP BY country
+    `);
+    return stmt.all();
+  }
+
+  getMetricsByJobTitle() {
+    const stmt = db.prepare(`
+      SELECT 
+        jobTitle,
+        MIN(salary) as min, 
+        MAX(salary) as max, 
+        AVG(salary) as average 
+      FROM employees 
+      GROUP BY jobTitle
+    `);
+    return stmt.all();
+  }
 }
 
 export const employeeRepository = new EmployeeRepository();

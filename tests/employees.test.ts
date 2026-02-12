@@ -1,8 +1,9 @@
 
-import { test, expect, beforeAll, afterAll } from 'vitest';
+import { test, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/app';
 import { randomUUID } from 'crypto';
+import { db } from '../src/database';
 
 let app: FastifyInstance;
 
@@ -10,6 +11,11 @@ beforeAll(async () => {
   // Build the app instance before all tests
   app = await buildApp();
   await app.ready();
+});
+
+// Clear the table before each test to ensure independence
+beforeEach(() => {
+  db.exec('DELETE FROM employees');
 });
 
 afterAll(async () => {
@@ -132,10 +138,6 @@ test('[GREEN] GET /employees should return a list of all employees', async () =>
   const payload1 = { fullName: 'Alice Wonderland', jobTitle: 'Lead Engineer', country: 'CA', salary: 150000 };
   const payload2 = { fullName: 'Bob Builder', jobTitle: 'DevOps Specialist', country: 'DE', salary: 110000 };
 
-  // Since tests might run in parallel and the DB is shared, we get the initial count first
-  const initialResponse = await app.inject({ method: 'GET', url: '/employees' });
-  const initialCount = JSON.parse(initialResponse.body).length;
-
   const createResponse1 = await app.inject({ method: 'POST', url: '/employees', payload: payload1 });
   const createResponse2 = await app.inject({ method: 'POST', url: '/employees', payload: payload2 });
   
@@ -151,7 +153,7 @@ test('[GREEN] GET /employees should return a list of all employees', async () =>
   const body = JSON.parse(response.body);
   
   expect(Array.isArray(body)).toBe(true);
-  expect(body.length).toBe(initialCount + 2);
+  expect(body.length).toBe(2);
 
   const createdId1 = JSON.parse(createResponse1.body).id;
   const createdId2 = JSON.parse(createResponse2.body).id;

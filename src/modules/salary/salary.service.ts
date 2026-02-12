@@ -52,6 +52,36 @@ export class SalaryService {
       country,
     };
   }
+
+  async getSalaryMetricsByCountry() {
+    const metrics = employeeRepository.getMetricsByCountry() as { country: string; min: number; max: number; average: number; }[];
+    
+    const result: Record<string, { min: number; max: number; average: number; }> = {};
+    
+    for (const metric of metrics) {
+        result[metric.country] = {
+            min: metric.min,
+            max: metric.max,
+            average: metric.average,
+        };
+    }
+    return result;
+  }
+
+  async getSalaryMetricsByJobTitle() {
+      const metrics = employeeRepository.getMetricsByJobTitle() as { jobTitle: string; min: number; max: number; average: number; }[];
+      
+      const result: Record<string, { min: number; max: number; average: number; }> = {};
+      
+      for (const metric of metrics) {
+          result[metric.jobTitle] = {
+              min: metric.min,
+              max: metric.max,
+              average: metric.average,
+          };
+      }
+      return result;
+  }
 }
 
 export const salaryService = new SalaryService();

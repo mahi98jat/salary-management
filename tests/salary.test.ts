@@ -1,14 +1,19 @@
 
-import { test, expect, beforeAll, afterAll } from 'vitest';
+import { test, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { buildApp } from '../src/app';
 import { randomUUID } from 'crypto';
+import { db } from '../src/database';
 
 let app: FastifyInstance;
 
 beforeAll(async () => {
   app = await buildApp();
   await app.ready();
+});
+
+beforeEach(() => {
+  db.exec('DELETE FROM employees');
 });
 
 afterAll(async () => {
@@ -103,4 +108,50 @@ test('[GREEN] GET /salary/calculate/:id should return 404 for non-existent emplo
         url: `/salary/calculate/${nonExistentId}`,
     });
     expect(response.statusCode).toBe(404);
+});
+
+// --- GET /salary/metrics ---
+
+test('[GREEN] GET /salary/metrics/by-country should return salary metrics grouped by country', async () => {
+    // 1. Setup
+    await app.inject({ method: 'POST', url: '/employees', payload: { fullName: 'US Dev 1', jobTitle: 'Dev', country: 'US', salary: 100000 } });
+    await app.inject({ method: 'POST', url: '/employees', payload: { fullName: 'US Dev 2', jobTitle: 'Dev', country: 'US', salary: 120000 } });
+    await app.inject({ method: 'POST', url: '/employees', payload: { fullName: 'IN Dev 1', jobTitle: 'Dev', country: 'IN', salary: 80000 } });
+    
+    // 2. Action
+    const response = await app.inject({ method: 'GET', url: '/salary/metrics/by-country' });
+
+    // 3. Assert
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.US).toEqual({ min: 100000, max: 120000, average: 110000 });
+    expect(body.IN).toEqual({ min: 80000, max: 80000, average: 80000 });
+});
+
+test('[GREEN] GET /salary/metrics/by-job-title should return salary metrics grouped by job title', async () => {
+    // 1. Setup
+    await app.inject({ method: 'POST', url: '/employees', payload: { fullName: 'Dev 1', jobTitle: 'Developer', country: 'US', salary: 100000 } });
+    await app.inject({ method: 'POST', url: '/employees', payload: { fullName: 'Dev 2', jobTitle: 'Developer', country: 'US', salary: 120000 } });
+    await app.inject({ method: 'POST', url: '/employees', payload: { fullName: 'Manager 1', jobTitle: 'Manager', country: 'IN', salary: 150000 } });
+
+    // 2. Action
+    const response = await app.inject({ method: 'GET', url: '/salary/metrics/by-job-title' });
+
+    // 3. Assert
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.body);
+    expect(body.Developer).toEqual({ min: 100000, max: 120000, average: 110000 });
+    expect(body.Manager).toEqual({ min: 150000, max: 150000, average: 150000 });
+});
+
+test('[GREEN] GET /salary/metrics/by-country should return empty object if no employees', async () => {
+    const response = await app.inject({ method: 'GET', url: '/salary/metrics/by-country' });
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({});
+});
+
+test('[GREEN] GET /salary/metrics/by-job-title should return empty object if no employees', async () => {
+    const response = await app.inject({ method: 'GET', url: '/salary/metrics/by-job-title' });
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({});
 });
